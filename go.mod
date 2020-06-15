@@ -1,4 +1,4 @@
-module fakelib
+module github.com/joshkunz/fakelib
 
 go 1.14
 

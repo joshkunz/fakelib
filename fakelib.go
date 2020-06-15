@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"fakelib/filesystem"
-	"fakelib/library"
+	"github.com/joshkunz/fakelib/filesystem"
+	"github.com/joshkunz/fakelib/library"
 )
 
 var (
