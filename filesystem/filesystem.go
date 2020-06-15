@@ -1,3 +1,20 @@
+/*
+Package filesystem provides a FUSE filesystem that can be used to mount
+a fake library to a particular filesystem path.
+
+Typical Usage:
+
+    lib, err := library.New(...)
+    if err != nil {
+        ...
+    }
+
+    server, err := filesystem.Mount(lib, dir, nil)
+    if err != nil {
+        ...
+    }
+    server.Serve()
+*/
 package filesystem
 
 import (

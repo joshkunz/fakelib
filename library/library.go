@@ -1,3 +1,36 @@
+/*
+Package library provides the core implementation of `fakelib`. It
+implements the "library" abstraction, and a song reader that proxies to
+a golden MP3.
+
+Typical Usage:
+
+    import (
+        "os"
+        "log"
+
+        "github.com/joshkunz/fakelib"
+    )
+
+    f, err := os.Open("gold.mp3")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer f.Close()
+
+    lib, err := library.New(f)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Access any songs/paths you want...
+
+    s := lib.SongAt(0)
+    s.Read(...)
+    s.Size()
+
+A mountable file-system can be found in github.com/joshkunz/fakelib/filesystem.
+*/
 package library
 
 import (
