@@ -8,10 +8,15 @@ https://travis-ci.org/joshkunz/fakelib)
 https://img.shields.io/github/license/joshkunz/ashuffle?color=informational)](
 LICENSE)
 
-
 `fakelib` is a tool for generating massive music libraries for testing
 purposes. It was originally created as part of the [ashuffle project](
 https://github.com/joshkunz/ashuffle) to test the performance of `ashuffle`.
+
+Install:
+
+```
+go get -u github.com/joshkunz/fakelib
+```
 
 ## Why?
 
