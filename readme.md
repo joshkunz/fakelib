@@ -2,6 +2,12 @@
 
 [![API reference](https://img.shields.io/badge/go.pkg.dev-reference-5272B4)](
 https://pkg.go.dev/github.com/joshkunz/fakelib?tab=doc)
+[![Build Status](https://travis-ci.org/joshkunz/fakelib.svg?branch=master)](
+https://travis-ci.org/joshkunz/fakelib)
+[![LICENSE](
+https://img.shields.io/github/license/joshkunz/ashuffle?color=informational)](
+LICENSE)
+
 
 `fakelib` is a tool for generating massive music libraries for testing
 purposes. It was originally created as part of the [ashuffle project](
