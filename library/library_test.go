@@ -2,6 +2,7 @@ package library
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"testing"
 
@@ -173,6 +174,31 @@ func TestSongAt(t *testing.T) {
 
 		if diff := cmp.Diff(test.wantInfo, info); diff != "" {
 			t.Errorf("testLibrary.SongAt(%d) diff in parsed song tag (want -> got):\n%s", test.idx, diff)
+		}
+	}
+}
+
+func TestLetterName(t *testing.T) {
+	tests := []struct {
+		idx  int
+		want string
+	}{
+		{idx: 0, want: "A"},
+		{idx: 25, want: "Z"},
+		{idx: 26, want: "AA"},
+		{idx: 27, want: "AB"},
+		{idx: 26 + 25, want: "AZ"},
+		{idx: 26 + (26 * 25), want: "ZA"},
+		{idx: 26 + (26 * 25) + 25, want: "ZZ"},
+		{idx: 26 + (26 * 26), want: "AAA"},
+		{idx: 26 + (26 * 26) + 1, want: "AAB"},
+	}
+
+	for _, test := range tests {
+		fmt.Printf("checking %d\n", test.idx)
+		got := letterName(test.idx)
+		if got != test.want {
+			t.Errorf("letterName(%d) = %q, want %q", test.idx, got, test.want)
 		}
 	}
 }

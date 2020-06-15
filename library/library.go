@@ -95,13 +95,19 @@ type Library struct {
 var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func letterName(i int) string {
-	// Increment by one, so that our loop below can
-	// be in terms of i > 0.
-	i++
 	var name []byte
-	for ; i > 0; i /= len(letters) {
-		letter := i % len(letters)
-		name = append(name, letters[letter-1])
+	for {
+		name = append(name, letters[i%len(letters)])
+		i /= len(letters)
+		if i == 0 {
+			break
+		}
+		// Need to -1 here, since we want 26 -> AA not AB.
+		i--
+	}
+	for j := 0; j < len(name)/2; j++ {
+		opp := len(name) - j - 1
+		name[j], name[opp] = name[opp], name[j]
 	}
 	return string(name)
 }
