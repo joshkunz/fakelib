@@ -2,7 +2,6 @@ package library
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"testing"
 
@@ -195,7 +194,6 @@ func TestLetterName(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		fmt.Printf("checking %d\n", test.idx)
 		got := letterName(test.idx)
 		if got != test.want {
 			t.Errorf("letterName(%d) = %q, want %q", test.idx, got, test.want)
