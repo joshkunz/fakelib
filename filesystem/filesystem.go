@@ -13,7 +13,10 @@ Typical Usage:
     if err != nil {
         ...
     }
-    server.Serve()
+
+    // use the files mounted in `dir`.
+
+    server.Unmount()
 */
 package filesystem
 
@@ -57,10 +60,21 @@ func (s *song) Getattr(_ context.Context, _ fs.FileHandle, out *fuse.AttrOut) sy
 type root struct {
 	fs.Inode
 
-	l *library.Library
+	l              *library.Library
+	nextInodeIDRaw uint64
 }
 
 var _ fs.NodeOnAdder = (*root)(nil)
+
+func (r *root) nextInodeID() (out uint64) {
+	if r.nextInodeIDRaw == 0 {
+		// -1, and 1 are reserved, so start at 2.
+		r.nextInodeIDRaw = 2
+	}
+	out = r.nextInodeIDRaw
+	r.nextInodeIDRaw++
+	return out
+}
 
 func (r *root) OnAdd(ctx context.Context) {
 	for i := 0; i < r.l.Tracks; i++ {
@@ -84,21 +98,27 @@ func (r *root) OnAdd(ctx context.Context) {
 
 			cur := wd.GetChild(component)
 			if cur == nil {
-				cur = wd.NewPersistentInode(ctx, &fs.Inode{}, fs.StableAttr{Mode: fuse.S_IFDIR})
+				cur = wd.NewPersistentInode(ctx, &fs.Inode{}, fs.StableAttr{
+					Mode: fuse.S_IFDIR,
+					Ino:  r.nextInodeID(),
+				})
 				wd.AddChild(component, cur, true)
 			}
 
 			wd = cur
 		}
 
-		node := wd.NewPersistentInode(ctx, &song{song: lSong}, fs.StableAttr{})
+		node := wd.NewPersistentInode(ctx, &song{song: lSong}, fs.StableAttr{Ino: r.nextInodeID()})
 		wd.AddChild(fname, node, true)
 	}
 }
 
 // Mount mounts the given library into `dir`. `options` can be used to supply
 // additional FUSE mount options. If the default options are OK, then `nil`
-// can safely be provided for `options`.
+// can safely be provided for `options`. The FUSE server runs in a separate
+// goroutine. This function does not block. The `Unmount` method of the returned
+// server can be used to unmount the filesystem. See the go-fuse docs for
+// details.
 func Mount(lib *library.Library, dir string, options *fs.Options) (*fuse.Server, error) {
 	return fs.Mount(dir, &root{l: lib}, options)
 }
