@@ -68,9 +68,6 @@ $ mkdir test
 $ fakelib gold.mp3 ./test/
 ```
 
-Run `fusermount -u <dir>` to unmount the filesystem, and exit the program.
-
-
 ## As a Library
 
 `fakelib` can also be used as a library. See the documentation for details. 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/joshkunz/fakelib/filesystem"
 	"github.com/joshkunz/fakelib/library"
@@ -57,6 +58,14 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("filesystem mounted at %q\n", mountDir)
-	fmt.Printf("unmount with `fusermount -u %s`\n", mountDir)
-	server.Serve()
+
+	// Wait for our process to be interrupted.
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+	<-c
+
+	if err := server.Unmount(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("filesystem unmounted from %q\n", mountDir)
 }
