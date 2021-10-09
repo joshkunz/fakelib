@@ -47,7 +47,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -57,7 +57,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -67,7 +67,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - C",
+			Title:  "C",
 			Track:  "3",
 		},
 	},
@@ -77,7 +77,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "B",
-			Title:  "A - B - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -87,7 +87,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "B",
-			Title:  "A - B - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -97,7 +97,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "A",
-			Title:  "B - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -107,7 +107,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "A",
-			Title:  "B - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -117,7 +117,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "B",
-			Title:  "B - B - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -128,7 +128,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "AA",
 			Album:  "A",
-			Title:  "AA - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -138,7 +138,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "AA",
 			Album:  "A",
-			Title:  "AA - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},

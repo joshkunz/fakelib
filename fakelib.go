@@ -40,9 +40,11 @@ func main() {
 		log.Fatalf("failed to load golden file %q: %v", goldenPath, err)
 	}
 	lib.Tracks = *librarySize
-	lib.TracksPerAlbum = *tracksPerAlbum
-	lib.AlbumsPerArtist = *albumsPerArtist
-	lib.MinPathLength = *minPathLength
+	lib.Tagger = library.AlbumTagger{
+		TracksPerAlbum:  *tracksPerAlbum,
+		AlbumsPerArtist: *albumsPerArtist,
+		MinPathLength:   *minPathLength,
+	}.Tag
 
 	// No need for the file anymore, just close it to drop the handle.
 	golden.Close()
