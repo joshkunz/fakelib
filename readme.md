@@ -2,8 +2,8 @@
 
 [![API reference](https://img.shields.io/badge/go.pkg.dev-reference-5272B4)](
 https://pkg.go.dev/github.com/joshkunz/fakelib?tab=doc)
-[![Build Status](https://travis-ci.org/joshkunz/fakelib.svg?branch=master)](
-https://travis-ci.org/joshkunz/fakelib)
+[![Test](https://github.com/joshkunz/fakelib/actions/workflows/test.yaml/badge.svg)](
+https://github.com/joshkunz/fakelib/actions/workflows/test.yaml)
 [![LICENSE](
 https://img.shields.io/github/license/joshkunz/ashuffle?color=informational)](
 LICENSE)
@@ -70,4 +70,4 @@ $ fakelib gold.mp3 ./test/
 
 ## As a Library
 
-`fakelib` can also be used as a library. See the documentation for details. 
+`fakelib` can also be used as a library. See the documentation for details.
