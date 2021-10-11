@@ -80,54 +80,36 @@ func (s Song) Read(buf []byte, off int64) {
 	copy(buf, s.data[off:])
 }
 
-// Library represents a fake library of songs. A single "golden" MP3 is
-// used as the basis for every track in the library, and song metadata is
-// generated on a per-track basis. A new library can be created with `New`.
-// The number of tracks, and the structure of the library can be controlled
-// via member variables.
-//
-// Songs in the library are always generated in the form:
-//    <artist>/<album>/<track>.mp3
-// Where each component is some number of characters from A-Z.
+// RepeatedLetters implements a tagger to generate track metadata using
+// repeated letters. Each component is some number of characters from A-Z.
 // Artists/Albums/Tracks are named in-order, starting at 0. So track 0 is
-//    A/A/A.mp3
+//    Artist: A, Album: A, Title: A
 // Track 1 is:
-//    A/A/B.mp3
+//    Artist: A, Album: A, Title: B
 // etc.
-// Track metadata represents what is shown in the path, except that the track
-// title is the concatenation of <artist>, <album>, <track> with "-" as a
-// separator.
 //
-// When MinPathLength > 3, path components are duplicated to extend the length
-// of the path, while maintaining uniqueness. E.g., when MinPathLength = 4,
-// Track 0 is:
-//    AA/AA/AA.mp3
+// When MinComponentLength is set, track components are duplicated to extend
+// the length of the path, while maintaining uniqueness. E.g., when
+// MinComponentLength = 2, Track 0 is:
+//    Artist: AA, Album: AA, Title: AA
 //
 // When all letters have been exhausted in a category, the name is extended
 // following a "spreadsheet" schema: A, B, ..., Z, AA, AB, ..., ZZ, AAA, ...
-// When MinPathLength > 3, the repeated name is extended. So when
-// MinPathLength = 4, "AB" becomes "ABAB".
-type Library struct {
-	// Total number of tracks in the fake library.
-	Tracks int
-
+// When MinComponentLength is set, the repeated name is extended. So when
+// MinComponentLength = 2, "AB" becomes "ABAB".
+type RepeatedLetters struct {
 	TracksPerAlbum  int
 	AlbumsPerArtist int
-	// Number of artists is derived from #of tracks, the track/album, and
-	// album/artist ratios.
+	// Number of artists is derived from the he track/album, and album/artist
+	// ratios.
 
-	// The minimum length of a path. Path elements are repeated to extend this
-	// value. Must be >= 3 or the result is undefined.
-	MinPathLength int
-
-	// golden is the "golden" track data for this
-	// Library. Does not include id3v2 header.
-	golden []byte
+	// The minimum length of a component. Components are repeated to extend
+	// this value. Defaults to 1 if unset.
+	MinComponentLength int
 }
 
-var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 func letterName(i int) string {
+	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	var name []byte
 	for {
 		name = append(name, letters[i%len(letters)])
@@ -145,35 +127,74 @@ func letterName(i int) string {
 	return string(name)
 }
 
-func (l *Library) name(i int) string {
-	minLength := l.MinPathLength
+func (a RepeatedLetters) name(i int) string {
+	minLength := a.MinComponentLength
 	if minLength == 0 {
-		// Special case to make the zero-value useful. Assume 3.
-		minLength = 3
+		// Special case to make the zero-value useful. Assume 1.
+		minLength = 1
 	}
-	// Divide by 3 because our paths have 3 components.
-	extension := minLength / 3
-	if minLength%3 != 0 {
-		extension++
-	}
-	return strings.Repeat(letterName(i), extension)
+	return strings.Repeat(letterName(i), minLength)
 }
 
-func (l *Library) attrsAt(idx int) (artist, album, name string, track int) {
-	if idx < 0 || idx > (l.Tracks-1) {
-		panic("index should be sanitized before attrsAt is called")
-	}
-
-	artistIdx := idx / (l.TracksPerAlbum * l.AlbumsPerArtist)
-	albumIdx := (idx / l.TracksPerAlbum) % l.AlbumsPerArtist
-	trackIdx := idx % l.TracksPerAlbum
-
-	artist = l.name(artistIdx)
-	album = l.name(albumIdx)
-	name = l.name(trackIdx)
-
+// Tag implements TagFunc to generate an id3v2 tag for a song at each index.
+func (a RepeatedLetters) Tag(idx int) *id3v2.Tag {
+	artist := a.name(idx / (a.TracksPerAlbum * a.AlbumsPerArtist))
+	album := a.name((idx / a.TracksPerAlbum) % a.AlbumsPerArtist)
+	trackIdx := idx % a.TracksPerAlbum
 	// Tracks on the album are numbered starting at 1, so trackIdx+1
-	return artist, album, name, trackIdx + 1
+	track := trackIdx + 1
+	name := a.name(trackIdx)
+
+	t := id3v2.NewEmptyTag()
+	t.SetArtist(artist)
+	t.SetAlbum(album)
+	t.SetTitle(name)
+	t.AddTextFrame(
+		t.CommonID("Track number/Position in set"),
+		id3v2.EncodingUTF8,
+		strconv.Itoa(track),
+	)
+
+	return t
+}
+
+// ArtistAlbumTitle implements PathFunc. The generated path follows a typical
+// <artist>/<album>/<title>.mp3 pattern for the song's title.
+func ArtistAlbumTitle(index int, tag *id3v2.Tag) string {
+	artist := tag.Artist()
+	album := tag.Album()
+	title := tag.Title()
+
+	return path.Join(artist, album, title) + ".mp3"
+}
+
+// TagFunc is a function that generates the tag for the song at the given
+// index in the library.
+type TagFunc func(index int) *id3v2.Tag
+
+// PathFunc is a function that generates the path for a particular song with
+// the given index and tag.
+type PathFunc func(index int, tag *id3v2.Tag) string
+
+// Library represents a fake library of songs. A single "golden" MP3 is
+// used as the basis for every track in the library, and song metadata is
+// generated on a per-track basis. A new library can be created with `New`.
+// The number of tracks, and the structure of the library can be controlled
+// via member variables.
+type Library struct {
+	// Total number of tracks in the fake library.
+	Tracks int
+
+	// Tagger is invoked to retrieve the tags for the song at each index
+	// position (0-based).
+	Tagger TagFunc
+	// Pather is invoked to generate the path for the song at each index. It
+	// is also passed the tag generated by the Tagger.
+	Pather PathFunc
+
+	// golden is the "golden" track data for this
+	// Library. Does not include id3v2 header.
+	golden []byte
 }
 
 // PathAt returns the path to the idx-th song in the library.
@@ -182,8 +203,7 @@ func (l *Library) PathAt(idx int) (string, error) {
 		return "", fmt.Errorf("index %d out of range [0, %d)", idx, l.Tracks)
 	}
 
-	artist, album, track, _ := l.attrsAt(idx)
-	return path.Join(artist, album, track) + ".mp3", nil
+	return l.Pather(idx, l.Tagger(idx)), nil
 }
 
 // SongAt returns the song at the idx-th spot in the library.
@@ -192,27 +212,18 @@ func (l *Library) SongAt(idx int) (Song, error) {
 		return Song{}, fmt.Errorf("index %d out of range [0, %d)", idx, l.Tracks)
 	}
 
-	artist, album, name, track := l.attrsAt(idx)
-
-	t := id3v2.NewEmptyTag()
-	t.SetArtist(artist)
-	t.SetAlbum(album)
-	t.SetTitle(fmt.Sprintf("%s - %s - %s", artist, album, name))
-	t.AddTextFrame(
-		t.CommonID("Track number/Position in set"),
-		id3v2.EncodingUTF8,
-		strconv.Itoa(track),
-	)
+	tag := l.Tagger(idx)
 
 	var buf bytes.Buffer
-	if _, err := t.WriteTo(&buf); err != nil {
+	if _, err := tag.WriteTo(&buf); err != nil {
 		log.Fatalf("error writing id3v2 header to buffer: %v", err)
 	}
 
 	return Song{tag: buf.Bytes(), data: l.golden}, nil
 }
 
-// New returns a new Library that uses Golden data
+// New returns a new Library that uses Golden data read from the given golden
+// reader.
 func New(golden io.ReadSeeker) (*Library, error) {
 	header, err := id3v2.ParseReader(golden, id3v2.Options{Parse: true})
 	if err != nil {
@@ -230,10 +241,12 @@ func New(golden io.ReadSeeker) (*Library, error) {
 	}
 
 	return &Library{
-		Tracks:          1000,
-		TracksPerAlbum:  10,
-		AlbumsPerArtist: 3,
-		MinPathLength:   3,
-		golden:          data,
+		Tracks: 1000,
+		Tagger: RepeatedLetters{
+			TracksPerAlbum:  10,
+			AlbumsPerArtist: 3,
+		}.Tag,
+		Pather: ArtistAlbumTitle,
+		golden: data,
 	}, nil
 }

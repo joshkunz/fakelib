@@ -47,7 +47,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -57,7 +57,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -67,7 +67,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "A",
-			Title:  "A - A - C",
+			Title:  "C",
 			Track:  "3",
 		},
 	},
@@ -77,7 +77,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "B",
-			Title:  "A - B - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -87,7 +87,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "A",
 			Album:  "B",
-			Title:  "A - B - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -97,7 +97,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "A",
-			Title:  "B - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -107,7 +107,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "A",
-			Title:  "B - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -117,7 +117,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "B",
 			Album:  "B",
-			Title:  "B - B - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -128,7 +128,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "AA",
 			Album:  "A",
-			Title:  "AA - A - A",
+			Title:  "A",
 			Track:  "1",
 		},
 	},
@@ -138,7 +138,7 @@ var libraryTests = []struct {
 		wantInfo: trackInfo{
 			Artist: "AA",
 			Album:  "A",
-			Title:  "AA - A - B",
+			Title:  "B",
 			Track:  "2",
 		},
 	},
@@ -199,4 +199,69 @@ func TestLetterName(t *testing.T) {
 			t.Errorf("letterName(%d) = %q, want %q", test.idx, got, test.want)
 		}
 	}
+}
+
+func TestCustomTagger(t *testing.T) {
+    want := trackInfo{
+        Artist: "Custom Artist",
+        Album: "Custom Album",
+        Title: "Custom Title",
+    }
+
+    tagF := func(idx int) *id3v2.Tag {
+        t := id3v2.NewEmptyTag()
+        t.SetArtist(want.Artist)
+        t.SetAlbum(want.Album)
+        t.SetTitle(want.Title)
+        return t
+    }
+
+    lib, err := New(bytes.NewReader(nil))
+    if err != nil {
+        t.Fatalf("Failed to create new library: %v", err)
+    }
+    lib.Tagger = tagF
+
+    gotSong, err := lib.SongAt(0) 
+    if err != nil {
+        t.Fatalf("lib.SongAt(0) = %v", err)
+    }
+    got, err := songInfo(gotSong)
+    if err != nil {
+        t.Fatalf("songInfo(...) = _, %v, want _, nil", err)
+    }
+
+    if diff := cmp.Diff(want, got); diff != "" {
+        t.Errorf("lib.SongAt(0) had unexpected diff (want -> got):\n%s", diff)
+    }
+}
+
+func TestCustomPather(t *testing.T) {
+    wantTag := id3v2.NewEmptyTag()
+    const want = "abc.mp3" 
+
+    lib, err := New(bytes.NewReader(nil))
+    if err != nil {
+        t.Fatalf("Failed to create new library: %v", err)
+    }
+    lib.Tagger = func(int) *id3v2.Tag {
+        return wantTag 
+    }
+    lib.Pather = func(_ int, gotTag *id3v2.Tag) string {
+        // Need to make sure that the pather is passed the tag from the
+        // tagger.
+        if wantTag != gotTag {
+            t.Errorf("Pather got unexpected tag %v, want %v", gotTag, wantTag)
+        }
+        return want
+    }
+
+    got, err := lib.PathAt(0)
+    if err != nil {
+        t.Fatalf("lib.PathAt(0) = _, %v; want _, nil", err)
+    }
+
+    if got != want {
+        t.Errorf("lib.PathAt(0) = %q, want %q", got, want)
+    }
 }
