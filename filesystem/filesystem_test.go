@@ -93,10 +93,10 @@ func TestSmallUniqueInodes(t *testing.T) {
 	dir, cleanup := mount(t, lib)
 	defer cleanup()
 
-	// The largest Inode we will support, something a good bit larget than our
+	// The largest Inode we will support, something a good bit larger than our
 	// our library size.
 	maxInode := uint64(lib.Tracks * 2)
-	allInodes := make(map[uint64]struct{})
+	allInodes := make(map[uint64]string)
 
 	var failures int
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -116,12 +116,15 @@ func TestSmallUniqueInodes(t *testing.T) {
 			hadFailure = true
 		}
 
-		if _, exists := allInodes[stat.Ino]; exists {
-			t.Errorf("Item %q had duplicate inode %d", path, stat.Ino)
+		// filepath.Walk appears to traverse some paths twice, which
+		// triggers this condition. Also check path here in-case this
+		// happens.
+		if ePath, exists := allInodes[stat.Ino]; exists && ePath != path {
+			t.Errorf("Item %q had duplicate inode %d at %q", path, stat.Ino, ePath)
 			hadFailure = true
 		}
 
-		allInodes[stat.Ino] = struct{}{}
+		allInodes[stat.Ino] = path
 
 		if hadFailure {
 			failures++
