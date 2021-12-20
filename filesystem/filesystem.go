@@ -25,6 +25,8 @@ import (
 	"log"
 	"path"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -61,19 +63,19 @@ type root struct {
 	fs.Inode
 
 	l              *library.Library
-	nextInodeIDRaw uint64
+	nextInodeInit  sync.Once
+	nextInodeIDRaw *uint64
 }
 
 var _ fs.NodeOnAdder = (*root)(nil)
 
 func (r *root) nextInodeID() (out uint64) {
-	if r.nextInodeIDRaw == 0 {
+	r.nextInodeInit.Do(func() {
 		// -1, and 1 are reserved, so start at 2.
-		r.nextInodeIDRaw = 2
-	}
-	out = r.nextInodeIDRaw
-	r.nextInodeIDRaw++
-	return out
+		nodeID := uint64(2)
+		r.nextInodeIDRaw = &nodeID
+	})
+	return atomic.AddUint64(r.nextInodeIDRaw, 1)
 }
 
 func (r *root) OnAdd(ctx context.Context) {
