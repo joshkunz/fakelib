@@ -15,7 +15,7 @@ https://github.com/joshkunz/ashuffle) to test the performance of `ashuffle`.
 Install:
 
 ```
-go get -u github.com/joshkunz/fakelib
+go install github.com/joshkunz/fakelib@latest
 ```
 
 ## Why?
@@ -46,7 +46,7 @@ library, `fakelib` generates tag information and responds with the bytes of
 the generated tag. Once the tag has been read, later reads in the file go
 directly to a "golden" MP3's audio data. This means that the library is
 functionally a large library of tracks with unique metadata, and exactly the
-same audio data. The "golden" MP3 is never copied so blah.
+same audio data. The "golden" MP3 is never copied.
 
 ## Running
 
