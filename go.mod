@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/bogem/id3v2 v1.2.0
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/hanwen/go-fuse/v2 v2.1.0
 )
 
