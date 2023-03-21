@@ -43,7 +43,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bogem/id3v2"
+	"github.com/bogem/id3v2/v2"
 )
 
 // Song is the type of a song in the library. It can be generated via Library.SongAt().
