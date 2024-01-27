@@ -5,29 +5,29 @@ a golden MP3.
 
 Typical Usage:
 
-    import (
-        "os"
-        "log"
+	import (
+	    "os"
+	    "log"
 
-        "github.com/joshkunz/fakelib"
-    )
+	    "github.com/joshkunz/fakelib"
+	)
 
-    f, err := os.Open("gold.mp3")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer f.Close()
+	f, err := os.Open("gold.mp3")
+	if err != nil {
+	    log.Fatal(err)
+	}
+	defer f.Close()
 
-    lib, err := library.New(f)
-    if err != nil {
-        log.Fatal(err)
-    }
+	lib, err := library.New(f)
+	if err != nil {
+	    log.Fatal(err)
+	}
 
-    // Access any songs/paths you want...
+	// Access any songs/paths you want...
 
-    s := lib.SongAt(0)
-    s.Read(...)
-    s.Size()
+	s := lib.SongAt(0)
+	s.Read(...)
+	s.Size()
 
 A mountable file-system can be found in github.com/joshkunz/fakelib/filesystem.
 */
@@ -35,9 +35,10 @@ package library
 
 import (
 	"bytes"
+	"compress/bzip2"
+	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"path"
 	"strconv"
@@ -45,6 +46,25 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 )
+
+// We use a bzip2 copy of the gold MP3 because it dramatically reduces the file
+// size from ~20KiB to <500B. We only need to decode it once (at startup) so
+// compression overhead shouldn't really matter here.
+
+//go:embed gold.mp3.bz2
+var embeddedGoldBz2 []byte
+
+// EmbeddedGoldMP3 returns a ReadSeeker for a golden MP3 file suitable for
+// passing to library.New(). The returned golden MP3 should consist of 5s of
+// silence.
+func EmbeddedGoldMP3() io.ReadSeeker {
+	bzReader := bzip2.NewReader(bytes.NewReader(embeddedGoldBz2))
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, bzReader); err != nil {
+		panic(fmt.Errorf("failed decompress embedded gold file: %w", err))
+	}
+	return bytes.NewReader(buf.Bytes())
+}
 
 // Song is the type of a song in the library. It can be generated via Library.SongAt().
 type Song struct {
@@ -83,15 +103,20 @@ func (s Song) Read(buf []byte, off int64) {
 // RepeatedLetters implements a tagger to generate track metadata using
 // repeated letters. Each component is some number of characters from A-Z.
 // Artists/Albums/Tracks are named in-order, starting at 0. So track 0 is
-//    Artist: A, Album: A, Title: A
+//
+//	Artist: A, Album: A, Title: A
+//
 // Track 1 is:
-//    Artist: A, Album: A, Title: B
+//
+//	Artist: A, Album: A, Title: B
+//
 // etc.
 //
 // When MinComponentLength is set, track components are duplicated to extend
 // the length of the path, while maintaining uniqueness. E.g., when
 // MinComponentLength = 2, Track 0 is:
-//    Artist: AA, Album: AA, Title: AA
+//
+//	Artist: AA, Album: AA, Title: AA
 //
 // When all letters have been exhausted in a category, the name is extended
 // following a "spreadsheet" schema: A, B, ..., Z, AA, AB, ..., ZZ, AAA, ...
@@ -235,7 +260,7 @@ func New(golden io.ReadSeeker) (*Library, error) {
 		return nil, err
 	}
 
-	data, err := ioutil.ReadAll(golden)
+	data, err := io.ReadAll(golden)
 	if err != nil {
 		return nil, err
 	}

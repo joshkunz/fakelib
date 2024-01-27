@@ -265,3 +265,28 @@ func TestCustomPather(t *testing.T) {
 		t.Errorf("lib.PathAt(0) = %q, want %q", got, want)
 	}
 }
+
+func TestEmbeddedGoldMP3(t *testing.T) {
+	lib, err := New(EmbeddedGoldMP3())
+	if err != nil {
+		t.Fatalf("failed to make new library: %v", err)
+	}
+
+	for _, test := range libraryTests {
+		song, err := lib.SongAt(test.idx)
+		if err != nil {
+			t.Errorf("testLibrary.EntryAt(%d) = _, %v; want _, nil", test.idx, err)
+			continue
+		}
+
+		info, err := songInfo(song)
+		if err != nil {
+			t.Errorf("failed to parse song at idx %d: %v", test.idx, err)
+			continue
+		}
+
+		if diff := cmp.Diff(test.wantInfo, info); diff != "" {
+			t.Errorf("lib.SongAt(%d) diff in parsed song tag (want -> got):\n%s", test.idx, diff)
+		}
+	}
+}
