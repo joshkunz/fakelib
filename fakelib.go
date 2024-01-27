@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -20,7 +21,7 @@ var (
 
 func main() {
 	flag.Parse()
-	if len(flag.Args()) < 2 {
+	if len(flag.Args()) < 1 {
 		log.Fatalf("usage: %s golden.mp3 mount/", os.Args[0])
 	}
 
@@ -28,11 +29,23 @@ func main() {
 		log.Fatalf("--min_path_length must be at least 3")
 	}
 
-	goldenPath, mountDir := flag.Arg(0), flag.Arg(1)
+	var goldenPath, mountDir string
+	if len(flag.Args()) < 2 {
+		mountDir = flag.Arg(0)
+	} else {
+		goldenPath, mountDir = flag.Arg(0), flag.Arg(1)
+	}
 
-	golden, err := os.Open(goldenPath)
-	if err != nil {
-		log.Fatalf("failed to open golden file %q: %v", goldenPath, err)
+	var golden io.ReadSeeker
+	if goldenPath != "" {
+		var err error
+		golden, err = os.Open(goldenPath)
+		if err != nil {
+			log.Fatalf("failed to open golden file %q: %v", goldenPath, err)
+		}
+		defer golden.(*os.File).Close()
+	} else {
+		golden = library.EmbeddedGoldMP3()
 	}
 
 	lib, err := library.New(golden)
@@ -45,9 +58,6 @@ func main() {
 		AlbumsPerArtist:    *albumsPerArtist,
 		MinComponentLength: *minPathLength / 3,
 	}.Tag
-
-	// No need for the file anymore, just close it to drop the handle.
-	golden.Close()
 
 	if _, err := os.Stat(mountDir); os.IsNotExist(err) {
 		os.Mkdir(mountDir, 0755)

@@ -24,7 +24,7 @@ go install github.com/joshkunz/fakelib@latest
 Since `ashuffle` had to track a user's library, there were performance issues
 scaling to these massive numbers of tracks. Since `ashuffle` did not interact
 with the libraries directly (instead it queried `MPD`), the libraries used
-during testing had to be real, valid, MP3s with correct metadata. 
+during testing had to be real, valid, MP3s with correct metadata.
 
 The first approach at generating large libraries was to generate a "golden"
 MP3, copy it several thousand times, and update the metadata accordingly. This
@@ -50,22 +50,31 @@ same audio data. The "golden" MP3 is never copied.
 
 ## Running
 
-First you'll need a "golden" MP3 which `fakelib` will use as the audio data
-for all fake tracks. Any MP3 should work, but you can also generate a short
-empty MP3 using `ffmpeg`. This is ideal for testing since it takes up very
-little space:
-
-```
-$ SECONDS=5
-$ ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t $SECONDS -q:a 9 -acodec libmp3lame gold.mp3
-```
-
 Once you have a golden MP3, you can run `fakelib` to mount the fake library
 file system, and then use it as normal:
 
 ```
 $ mkdir test
+$ fakelib ./test/
+```
+
+### With a Custom Golden MP3
+
+fakelib works based on a "golden" MP3. This MP3 will be used as the actual
+audio content for the virtual songs. If for whatever the built-in golden MP3
+is not sufficient (e.g. you want a longer MP3) you can use provide a custom
+golden MP3 as the first argument:
+
+```
 $ fakelib gold.mp3 ./test/
+```
+
+Any MP3 should work, but one good way to generate a short empty MP3 is using
+`ffmpeg`. This is ideal for testing since it takes up very little space:
+
+```
+$ SECONDS=5
+$ ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t $SECONDS -q:a 9 -acodec libmp3lame gold.mp3
 ```
 
 ## As a Library
