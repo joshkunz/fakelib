@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/google/go-cmp v0.7.0
-	github.com/hanwen/go-fuse/v2 v2.9.0
+	github.com/hanwen/go-fuse/v2 v2.11.0
 )
 
 require (
